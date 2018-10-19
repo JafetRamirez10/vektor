@@ -1,0 +1,88 @@
+body,html{
+	background: url("../img/fondo.jpg");
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	overflow-x: hidden;
+
+}
+div.login{
+	background-color: white;
+		text-align: center;
+	width: 30rem;
+	border-radius: 0.5rem;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	position: absolute;
+	margin: 4rem auto;
+	padding: 2rem;
+	-webkit-box-shadow: 10px 10px 49px 9px rgba(0,0,0,0.75);
+-moz-box-shadow: 10px 10px 49px 9px rgba(0,0,0,0.75);
+box-shadow: 10px 10px 49px 9px rgba(0,0,0,0.75);
+}
+h1{
+	font-family: 'Anton', sans-serif;
+	font-size: 2.5em;
+	color:black;
+}
+.Aton{
+	font-family: 'Anton', sans-serif;
+}
+.Pauta{
+	font-family: 'Russo One', sans-serif;
+	}
+ a{
+	color:white;
+}
+
+i.fa-sign-in-alt{
+	color:white;
+	margin-left: 2%;
+}
+div.inicio-menu{
+	background-color: white;
+	color:black;
+	border:0;
+}
+div.inicio-menu a{
+	color:black;
+}
+div.inicio-menu a:hover{
+	text-decoration: none;
+}
+#tabla1{
+	margin-top: 4%;
+}
+.stacktable.large-only { display: table; }
+  .stacktable.small-only { display: none; }	
+
+div.modal-header{
+background-color: #ff6c36;
+color:white;
+}
+@media (max-width:767px){
+	div.inicio-menu h1{
+		font-size: 40px;
+	}
+.stacktable.large-only { display: none; }
+  .stacktable.small-only { display: table; }	
+
+}
+
+@media print {
+button , input {
+	display: none!important;
+}
+th.acciones , td.acciones , .ocultoImpresion {
+	display: none!important;
+}
+table , th , td{
+	border:1px solid  black !important;
+}
+
+.stacktable.large-only { display: table!important }
+  .stacktable.small-only { display: none!important; }	
+
+}
