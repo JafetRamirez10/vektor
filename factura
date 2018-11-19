@@ -1,0 +1,338 @@
+ function acept_fact(){
+   
+        if($this->input->post("message")){
+            //Cargar XML
+  $message=$this->input->post("message");
+            echo $message;
+                $imagen = $_FILES["UploadXML"]["tmp_name"];
+                $aleatorio = mt_rand(100, 999);
+                 $ruta = "temp/";
+                 $ruta=$ruta.basename($aleatorio.".xml");
+                 if(move_uploaded_file($imagen, $ruta)){
+                    //$xml=new SimpleXMLElement($ruta);
+                    $xml=simplexml_load_file($ruta);
+                   //echo $xml->NumeroConsecutivo;
+                    $consecutivo=$xml->NumeroConsecutivo;
+                    $consecutivo=substr($consecutivo, -10);
+                    $clave=$xml->Clave;     
+                    $url = "api2.facturelocr.online/api.php";
+
+                   //Conexion a la DB
+                        $download = $this->settings_model->getAPIsettings();
+                        if($download->type_ced=="01"){
+                        $type_ced="fisico";
+                        }
+                    if($download->type_ced=="02"){
+                        $type_ced="juridico";
+                            }
+
+                    //Fin de conexion a la DB
+                   // FIN DE CARGAR XML
+
+
+
+    //Iniciar Sesion
+        $curl= curl_init($url);
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+        $data=array(
+            "w"=>"users",
+            "r"=>"users_log_me_in",
+            "userName"=>$download->username_api,
+            "pwd"=>$download->pwd_api,
+            "");
+        //$data = http_build_query($data);
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+      
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+   
+       $err = curl_error($curl);
+
+
+
+        //$response = json_decode(json_encode($response));
+            $response=json_decode($response,true);
+            $sessionKey= $response['resp']['sessionKey'];
+     
+       $err;
+       curl_close($curl);
+      if ($err) {
+          return false;
+        } else {
+
+      //return $response;
+    }
+
+    //Fin de iniciar Sesion
+
+
+
+
+
+
+     // CREACION DE UNA CLAVE
+         $curl= curl_init($url);
+         curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+     if($message=="1"){
+        $dataMessage="CCE";
+    }
+    if($message=="2"){
+        $dataMessage="CPCE";
+    }
+    if($message=="3"){
+        $dataMessage="RCE";
+    }
+    $data = array("w"=>'clave',
+       "r"=>'clave',
+       'cedula'=>$download->username_api,
+       'codigoPais'=>'506',
+       'tipoCedula'=>$type_ced,
+       'consecutivo'=>$consecutivo,
+       'situacion'=>'normal',
+       'codigoSeguridad'=>'00000030',
+       'tipoDocumento'=>$dataMessage,
+       'terminal' =>'00001',
+       'sucursal' =>'001'
+      );
+        //$data = http_build_query($data);
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+      
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+   
+       $err = curl_error($curl);
+
+
+
+        $response = json_decode($response,true);
+        
+       $err;
+       curl_close($curl);
+      if ($err) {
+          return false;
+        } else {
+
+
+            $consecutivo=$response['resp']['consecutivo'];
+           $claveFirmado=$response['resp']['clave'];
+        }
+     //return $response['resp']['clave'];
+
+     //FIN DE CREACION DE LA CLAVE
+
+
+
+  // GENERAR TOKEN
+
+$curl= curl_init($url);
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+        $data=array(
+            "w"=>"token",
+            "r"=>"gettoken",
+            "grant_type"=>"password",
+            "client_id"=>>$download->api_mode,
+            "username"=>$download->username,
+            "password"=>$download->password);
+
+        $data = http_build_query($data);
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+
+       $err = curl_error($curl);
+
+
+
+   
+         $response=json_decode($response,true);
+             
+          $token=$response['resp']['access_token'];
+        
+
+
+       $err;
+       curl_close($curl);
+      if ($err) {
+          return false;
+        } 
+         //  FIN  GENERAR TOKEN
+
+    // ENVIAR A HACIENDA
+
+        $curl= curl_init($url);
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+        $data=array(
+            "w"=>"genXML",
+            "r"=>"gen_xml_mr",
+            "clave"=>$claveFirmado,
+            "numero_consecutivo_receptor"=>$consecutivo,
+            "fecha_emision_doc"=>(string)$xml->FechaEmision,
+            "numero_cedula_emisor"=>(string)$xml->Emisor->Identificacion->Numero,
+            "detalle_mensaje"=>"Mensaje",
+            "numero_cedula_receptor"=>(string)$xml->Receptor->Identificacion->Numero,
+            "mensaje"=>$dataMessage,
+            "monto_total_impuesto"=>(string)$xml->ResumenFactura->TotalImpuesto,
+            "total_factura"=>(string)$xml->ResumenFactura->TotalComprobante
+        );
+        $data = http_build_query($data);
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+
+       $err = curl_error($curl);
+
+
+
+        //$response = json_decode(json_encode($response));
+         $response=json_decode($response,true);
+
+          $claveFinal=$response['resp']['clave'];
+         $xmlConfirmacion=$response['resp']['xml'];
+
+
+       $err;
+       curl_close($curl);
+      if ($err) {
+          return false;
+        } else {
+
+         $curl= curl_init($url);
+        curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+             $data = array("w"=>'signXML',
+       "r"=>'signFE',
+       "inXml"=>$xmlConfirmacion,
+       "p12Url"=>$download->downloadcode,
+       "pinP12"=>$download->pin,
+       "tipodoc"=>$dataMessage
+      );
+            
+        $data = http_build_query($data);
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+      
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+   
+       $err = curl_error($curl);
+
+
+        $response = json_decode($response,true);
+       $err;
+       curl_close($curl);
+      if ($err) {
+          return false;
+        } else {
+
+  
+        $xml_64=$response['resp']['xmlFirmado'];
+
+
+         if($claveFinal!="" && $xmlConfirmacion!=""){
+           $this->db->query("INSERT INTO `sim_acept`( `clave`, `xml`, `respuesta`) VALUES ('".$claveFinal."', '".$xml_64."', '".$_POST['message']."')");
+
+            }else{
+                 echo "<script>location.href='../home?error=".$response."'</script>";
+            }
+
+
+$type = '';
+$type2 = '';
+if (strlen((string)$xml->Emisor->Identificacion->Numero)==9) {
+$type = '01';
+}else{ $type = '02'; }
+
+
+if (strlen((string)$xml->Receptor->Identificacion->Numero)==9) {
+$type2 = '01';
+}else{ $type2 = '02'; }
+   
+  $curl= curl_init($url);
+    curl_setopt($curl,CURLOPT_RETURNTRANSFER, true);
+    $data = array("w"=>'send',
+       "r"=>'json',
+       "token"=> $token,
+       'clave' => $clave,
+       'fecha' =>(string)date(DATE_ATOM),
+       'emi_tipoIdentificacion' => $type,
+       'emi_numeroIdentificacion' => (string)$xml->Emisor->Identificacion->Numero,
+       'recp_tipoIdentificacion' =>$type2,
+       'recp_numeroIdentificacion'=>(string)$xml->Receptor->Identificacion->Numero,
+       'client_id' => >$download->api_mode,// cambiar api-prod
+       'comprobanteXml'=> $xml_64
+      );
+        //$data = http_build_query($data);
+       
+      curl_setopt($curl, CURLOPT_POST, true);
+
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+
+      curl_setopt($curl, CURLOPT_USERAGENT,  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36");
+      curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+
+       $response = curl_exec($curl);
+
+       $err = curl_error($curl);
+
+
+
+        $response = json_decode($response,true);
+        print_r($response);
+       $err;
+
+    }
+    }
+
+
+    //FIN DE ENVIAR HACIENDA
+     echo "<script>location.href='../sales/acept_fact?correct=".$claveFinal."'</script>";
+
+
+    }
+}
+
+}
